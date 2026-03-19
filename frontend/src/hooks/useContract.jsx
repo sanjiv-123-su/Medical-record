@@ -81,26 +81,55 @@ export function useWallet() {
   }, [])
 
   useEffect(() => {
-    if (!isMetaMaskInstalled()) return
+  if (!isMetaMaskInstalled()) return
 
-    window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
-      if (accounts.length > 0) connectWallet()
-    })
-
-    const handleAccountsChanged = (accounts) => {
-      if (accounts.length === 0) disconnectWallet()
-      else connectWallet()
+  // ✅ Only restore session if user already explicitly connected before
+  // eth_accounts returns connected accounts WITHOUT triggering a popup
+  // We only restore — never auto-prompt
+  window.ethereum.request({ method: 'eth_accounts' }).then((accounts) => {
+    if (accounts.length > 0) {
+      // Silently restore existing session — no popup
+      const _provider = new ethers.BrowserProvider(window.ethereum)
+      _provider.getSigner().then(async (_signer) => {
+        const _account = await _signer.getAddress()
+        const network  = await _provider.getNetwork()
+        setProvider(_provider)
+        setSigner(_signer)
+        setAccount(_account)
+        setChainId(Number(network.chainId))
+      }).catch(() => {
+        // Session expired — don't auto-prompt, just stay disconnected
+      })
     }
-    const handleChainChanged = () => window.location.reload()
+    // If no accounts → stay disconnected, wait for user to click Connect
+  })
 
-    window.ethereum.on('accountsChanged', handleAccountsChanged)
-    window.ethereum.on('chainChanged', handleChainChanged)
-
-    return () => {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
-      window.ethereum.removeListener('chainChanged', handleChainChanged)
+  const handleAccountsChanged = (accounts) => {
+    if (accounts.length === 0) disconnectWallet()
+    else {
+      // Account switched — silently update, no popup
+      const _provider = new ethers.BrowserProvider(window.ethereum)
+      _provider.getSigner().then(async (_signer) => {
+        const _account = await _signer.getAddress()
+        const network  = await _provider.getNetwork()
+        setProvider(_provider)
+        setSigner(_signer)
+        setAccount(_account)
+        setChainId(Number(network.chainId))
+      }).catch(() => disconnectWallet())
     }
-  }, [connectWallet, disconnectWallet])
+  }
+
+  const handleChainChanged = () => window.location.reload()
+
+  window.ethereum.on('accountsChanged', handleAccountsChanged)
+  window.ethereum.on('chainChanged', handleChainChanged)
+
+  return () => {
+    window.ethereum.removeListener('accountsChanged', handleAccountsChanged)
+    window.ethereum.removeListener('chainChanged', handleChainChanged)
+  }
+}, [disconnectWallet])
 
   return {
     account,
