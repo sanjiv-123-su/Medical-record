@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files
+.env
+backend/.env
+frontend/.env
+*.env.local
+
+# Build artifacts
+frontend/build/
+frontend/dist/
+artifacts/
+cache/
+typechain-types/
+
+# Deployment artifacts (keep contractConfig.json in version control for team sharing)
+# Uncomment if you want to exclude:
+# backend/contractConfig.json
+# frontend/src/contractConfig.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Hardhat
+coverage/
+coverage.json

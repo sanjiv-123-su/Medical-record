@@ -1,0 +1,16 @@
+{
+  "name": "medledger",
+  "version": "1.0.0",
+  "description": "Blockchain-Based Medical Records Management System",
+  "private": true,
+  "scripts": {
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:preview": "cd frontend && npm run preview"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
