@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, Navigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAppContext } from '../components/WalletContext.jsx'
 import { Alert, Spinner } from '../components/UI.jsx'
@@ -13,7 +13,7 @@ const SPECIALIZATIONS = [
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { account, isConnected, connectWallet, registerPatient, registerDoctorSelf, refreshRole } = useAppContext()
+  const { account, isConnected, connectWallet, registerPatient, registerDoctorSelf, refreshRole, isContractReady, isCorrectNetwork, userRole, roleLoading, error: walletError } = useAppContext()
 
   const [role, setRole]         = useState(null)   // 'patient' | 'doctor'
   const [loading, setLoading]   = useState(false)
@@ -22,17 +22,48 @@ export default function RegisterPage() {
   // Patient form
   const [patientName, setPatientName] = useState('')
   const [patientAge, setPatientAge]   = useState('')
+  const [patientWallet, setPatientWallet] = useState('')
 
   // Doctor form
   const [doctorName, setDoctorName] = useState('')
   const [doctorSpec, setDoctorSpec] = useState('')
+  const [doctorWallet, setDoctorWallet] = useState('')
+
+  useEffect(() => {
+    if (account) {
+      setPatientWallet(account)
+      setDoctorWallet(account)
+    }
+  }, [account])
+
+  useEffect(() => {
+    console.log('RegisterPage hook:', {userRole, isConnected, isCorrectNetwork, isContractReady, roleLoading})
+    if (!isConnected || !isCorrectNetwork || !isContractReady || roleLoading) return
+
+    if (userRole === 'doctor') {
+      navigate('/doctor')
+      return
+    }
+    if (userRole === 'patient') {
+      navigate('/patient')
+      return
+    }
+  }, [userRole, isConnected, isContractReady, roleLoading, navigate])
 
   async function handleRegisterPatient(e) {
     e.preventDefault()
+    if (userRole === 'patient') {
+      navigate('/patient')
+      return
+    }
+    if (userRole === 'doctor') {
+      navigate('/doctor')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      await registerPatient(patientName.trim(), parseInt(patientAge, 10))
+      await registerPatient(patientName.trim(), Number.parseInt(patientAge, 10))
       await refreshRole()
       toast.success('Patient registered successfully!')
       navigate('/patient')
@@ -45,6 +76,14 @@ export default function RegisterPage() {
 
   async function handleRegisterDoctor(e) {
     e.preventDefault()
+    if (userRole === 'doctor') {
+      navigate('/doctor')
+      return
+    }
+    if (userRole === 'patient') {
+      navigate('/patient')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -63,6 +102,11 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card p-10 max-w-md w-full text-center">
+          {(walletError || error) && (
+            <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 text-red-700 border border-red-200">
+              {walletError || error}
+            </div>
+          )}
           <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -74,6 +118,62 @@ export default function RegisterPage() {
           <button onClick={connectWallet} className="btn-primary w-full justify-center">
             Connect MetaMask
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isCorrectNetwork) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="card p-10 max-w-md w-full text-center border-orange-200 bg-orange-50">
+          <h2 className="font-display text-xl font-bold text-orange-800 mb-2">Switch to Sepolia</h2>
+          <p className="text-orange-700 text-sm mb-6">Please switch your wallet to the Sepolia test network before using MedLedger.</p>
+          <button onClick={connectWallet} className="btn-primary w-full justify-center">
+            Reconnect Wallet
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isContractReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="card p-8 max-w-md w-full text-center border-red-200 bg-red-50">
+          <h2 className="font-display text-xl font-bold text-red-700 mb-3">Contract not configured</h2>
+          <p className="text-sm text-red-700 mb-4">
+            Set your contract data in <code>frontend/src/contractConfig.json</code> or add <code>VITE_CONTRACT_ADDRESS</code> + <code>VITE_CONTRACT_ABI</code> in <code>.env</code> and restart.
+          </p>
+          <p className="text-sm text-slate-500">
+            After deployment run <code>npm run deploy:local</code> or <code>npm run deploy:sepolia</code>.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (userRole === 'doctor' || userRole === 'patient') {
+    const dest = userRole === 'doctor' ? '/doctor' : '/patient'
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="card p-10 max-w-md w-full text-center">
+          <h2 className="font-display text-2xl font-bold text-slate-800 mb-4">Account already registered</h2>
+          <p className="text-slate-500 mb-6">
+            You are already registered as <strong>{userRole}</strong>.
+            You can go directly to dashboard or switch wallet to register a different account.
+          </p>
+          <div className="space-y-3">
+            <button onClick={() => navigate(dest)} className="btn-primary w-full justify-center py-3">
+              Go to Dashboard
+            </button>
+            <button onClick={() => { connectWallet(); window.location.reload() }} className="btn-secondary w-full justify-center py-3">
+              Switch Wallet / Reconnect
+            </button>
+            <button onClick={() => { window.location.href = '/register'; }} className="btn-ghost w-full justify-center py-3">
+              Stay on Registration Page
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -160,7 +260,9 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Wallet Address</label>
-                  <div className="input-field bg-slate-100 text-slate-500 font-mono text-sm cursor-not-allowed">{account}</div>
+                  <input type="text" className="input-field" value={patientWallet}
+                    onChange={(e) => setPatientWallet(e.target.value)} placeholder="Enter wallet address" required />
+                  <p className="text-xs text-slate-400 mt-1">Registration still uses your connected wallet signer.</p>
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 mt-2">
                   {loading ? <><Spinner size="sm" color="white" /> Registering on blockchain…</> : 'Register as Patient'}
@@ -182,7 +284,9 @@ export default function RegisterPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Wallet Address</label>
-                  <div className="input-field bg-slate-100 text-slate-500 font-mono text-sm cursor-not-allowed">{account}</div>
+                  <input type="text" className="input-field" value={doctorWallet}
+                    onChange={(e) => setDoctorWallet(e.target.value)} placeholder="Enter wallet address" required />
+                  <p className="text-xs text-slate-400 mt-1">Registration still uses your connected wallet signer.</p>
                 </div>
                 <button type="submit" disabled={loading} className="btn-success w-full justify-center py-3 mt-2">
                   {loading ? <><Spinner size="sm" color="white" /> Registering on blockchain…</> : 'Register as Doctor'}

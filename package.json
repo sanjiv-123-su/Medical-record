@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Blockchain-Based Medical Records Management System",
   "private": true,
+  "type": "module",
   "scripts": {
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm run dev",
@@ -11,6 +12,9 @@
     "frontend:preview": "cd frontend && npm run preview"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "concurrently": "^8.2.0",
+    "dotenv": "^17.3.1",
+    "hardhat": "^3.2.0"
   }
 }

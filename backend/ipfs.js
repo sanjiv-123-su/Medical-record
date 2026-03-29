@@ -13,6 +13,12 @@ const PINATA_GATEWAY = process.env.PINATA_GATEWAY || "https://gateway.pinata.clo
 
 const PINATA_BASE_URL = "https://api.pinata.cloud";
 
+if (!PINATA_API_KEY || !PINATA_SECRET_KEY) {
+  throw new Error(
+    "Missing Pinata credentials: set PINATA_API_KEY and PINATA_SECRET_KEY in backend/.env"
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 //  ENCRYPTION UTILITIES
 // ─────────────────────────────────────────────────────────────

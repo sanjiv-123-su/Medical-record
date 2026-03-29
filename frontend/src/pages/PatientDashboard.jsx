@@ -39,7 +39,7 @@ export default function PatientDashboard() {
   const [accessError, setAccessError]     = useState(null)
 
   const fetchData = useCallback(async () => {
-    if (!account) return
+    if (!account || userRole !== 'patient') return
     setLoading(true)
     try {
       const [recs, logs] = await Promise.all([
@@ -53,7 +53,7 @@ export default function PatientDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [account, getRecords, getAccessLogs])
+  }, [account, userRole, getRecords, getAccessLogs])
 
   useEffect(() => { fetchData() }, [fetchData])
 

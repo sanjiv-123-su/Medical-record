@@ -4,8 +4,6 @@
  */
 
 const { ethers } = require("ethers");
-const fs = require("fs");
-const path = require("path");
 
 let contractConfig;
 try {
@@ -129,16 +127,18 @@ async function checkAccess(patientAddress, doctorAddress) {
 }
 
 /**
- * Get access logs for a patient (admin function)
+ * Get access logs for a patient
  * @param {string} patientAddress
  * @returns {Promise<Array>}
  */
 async function getAccessLogs(patientAddress) {
-  // Note: in production, this would use patient's own signer
   const contract = getContract();
-  // Access logs require patient's signature in the contract
-  // Here we return them via a trusted backend query
-  return [];
+  const logs = await contract.getAccessLogs(patientAddress);
+  return logs.map(log => ({
+    viewer: log.viewer,
+    timestamp: Number(log.timestamp),
+    action: log.action,
+  }));
 }
 
 module.exports = {

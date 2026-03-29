@@ -1,7 +1,7 @@
 {
   "contractAddress": "0x43557d701519e4a9a8d5137d2d74b37edf1597b5",
-  "network": "sepolia",
-  "chainId": 11155111,
+  "network": "localhost",
+  "chainId": 31337,
   "deployedAt": "2026-03-29T05:46:41.718Z",
   "abi": [
     {
